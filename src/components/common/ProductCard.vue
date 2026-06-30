@@ -3,6 +3,9 @@
     <!-- Sale badge -->
     <span v-if="product.on_sale" class="badge-sale">SALE</span>
 
+    <!-- Out of Stock badge -->
+    <span v-if="!product.in_stock" class="badge-oos">Out of Stock</span>
+
     <!-- Wishlist toggle -->
     <button v-if="auth.isLoggedIn" class="wishlist-btn" @click.prevent="toggleWish" :title="wishlisted ? 'Remove from wishlist' : 'Add to wishlist'">
       <svg v-if="!wishlisted" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
@@ -30,12 +33,13 @@
 
       <div class="product-card__actions">
         <button
-          class="btn btn-primary btn-sm add-to-cart-btn"
+          class="btn btn-sm add-to-cart-btn"
+          :class="product.in_stock ? 'btn-primary' : 'btn-oos'"
           :disabled="!product.in_stock || adding"
           @click="addToCart"
         >
           <svg v-if="!adding" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
-          <span>{{ product.in_stock ? (adding ? 'Adding…' : 'Add to Cart') : 'Out of Stock' }}</span>
+          <span>{{ product.in_stock ? (adding ? 'Adding…' : 'Add to Cart') : 'Unavailable' }}</span>
         </button>
       </div>
     </div>
@@ -90,6 +94,12 @@ async function toggleWish() {
 }
 .product-card:hover .add-to-cart-btn {
   opacity: 1; transform: translateY(0);
+}
+.btn-oos {
+  background: var(--gray-100); color: var(--gray-400);
+  cursor: default; pointer-events: none;
+  border: 1px solid var(--gray-200);
+  font-weight: 500;
 }
 /* Always show on mobile */
 @media (max-width: 768px) {

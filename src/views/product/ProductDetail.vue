@@ -24,6 +24,7 @@
             <div class="main-image-wrap">
               <img :src="activeImage || '/placeholder.png'" :alt="product.name" class="product-detail__main-img" />
               <span v-if="product.on_sale" class="detail-badge-sale">SALE</span>
+              <span v-if="!product.in_stock" class="detail-badge-oos">Out of Stock</span>
             </div>
             <div v-if="product.images?.length" class="product-detail__thumbs">
               <button
@@ -164,7 +165,9 @@
               </div>
             </div>
             <div v-else class="empty-state" style="padding:2rem">
-              <p style="font-size:2rem">💬</p>
+              <div class="empty-icon-wrap">
+                <img src="https://images.unsplash.com/photo-1559136555-9303baea8ebd?w=80&q=80&auto=format&fit=crop" alt="No reviews" class="empty-icon-img" />
+              </div>
               <p style="margin-top:.5rem;color:var(--gray-500)">No reviews yet. Be the first to share your thoughts!</p>
             </div>
           </div>
@@ -268,6 +271,13 @@ onMounted(async () => {
   color: #fff; padding: .35rem .85rem; border-radius: var(--radius-full);
   font-size: .75rem; font-weight: 700;
 }
+.detail-badge-oos {
+  position: absolute; top: 1rem; left: 1rem;
+  background: rgba(0,0,0,.55); backdrop-filter: blur(4px);
+  color: rgba(255,255,255,.85); padding: .35rem .85rem;
+  border-radius: var(--radius-full); font-size: .75rem; font-weight: 700;
+  border: 1px solid rgba(255,255,255,.15);
+}
 .product-detail__thumbs {
   display: flex; gap: .5rem; margin-top: .75rem; flex-wrap: wrap;
 }
@@ -309,8 +319,8 @@ onMounted(async () => {
 }
 .in-stock { background: #f0fdf4; color: #15803d; }
 .in-stock .stock-dot { width: 8px; height: 8px; border-radius: 50%; background: #22c55e; animation: pulse-soft 2s infinite; }
-.out-stock { background: #fef2f2; color: #991b1b; }
-.out-stock .stock-dot { width: 8px; height: 8px; border-radius: 50%; background: #ef4444; }
+.out-stock { background: #f1f5f9; color: #64748b; }
+.out-stock .stock-dot { width: 8px; height: 8px; border-radius: 50%; background: #94a3b8; }
 
 .product-detail__desc {
   font-size: .9rem; color: var(--gray-600); line-height: 1.7;
@@ -365,6 +375,17 @@ onMounted(async () => {
 .review-name { font-size: .9rem; }
 .review-date { font-size: .8rem; color: var(--gray-400); margin-left: auto; }
 .review-text { margin-top: .6rem; color: var(--gray-600); line-height: 1.6; font-size: .9rem; }
+
+.empty-icon-wrap {
+  width: 72px; height: 72px; border-radius: 50%; overflow: hidden;
+  background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+  display: grid; place-items: center;
+  margin: 0 auto 1rem;
+  box-shadow: 0 4px 12px rgba(34,197,94,.15);
+}
+.empty-icon-img {
+  width: 100%; height: 100%; object-fit: cover;
+}
 
 /* Fade transition */
 .fade-enter-active { animation: fadeInUp .3s var(--ease); }

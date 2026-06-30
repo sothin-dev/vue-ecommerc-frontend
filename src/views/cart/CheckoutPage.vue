@@ -55,7 +55,9 @@
               >
                 <input type="radio" v-model="form.payment_method" :value="m.value" />
                 <div class="payment-option__radio"></div>
-                <span class="payment-option__icon">{{ m.icon }}</span>
+                <span class="payment-option__icon">
+                  <img :src="m.icon" alt="" class="payment-option__icon-img" />
+                </span>
                 <div class="payment-option__info">
                   <strong>{{ m.label }}</strong>
                   <p>{{ m.desc }}</p>
@@ -136,9 +138,9 @@ const form = reactive({
 })
 
 const paymentMethods = [
-  { value: 'cash_on_delivery', label: 'Cash on Delivery', icon: '💵', desc: 'Pay when your order arrives at your doorstep.' },
-  { value: 'bank_transfer',    label: 'Bank Transfer',    icon: '🏦', desc: 'Transfer directly to our bank account.' },
-  { value: 'credit_card',      label: 'Credit / Debit Card', icon: '💳', desc: 'Pay securely online with your card.' },
+  { value: 'cash_on_delivery', label: 'Cash on Delivery', icon: 'https://images.unsplash.com/photo-1589227365533-1cb251a96435?w=60&q=80&auto=format&fit=crop', desc: 'Pay when your order arrives at your doorstep.' },
+  { value: 'bank_transfer',    label: 'Bank Transfer',    icon: 'https://images.unsplash.com/photo-1563013544-824ae1b704d3?w=60&q=80&auto=format&fit=crop', desc: 'Transfer directly to our bank account.' },
+  { value: 'credit_card',      label: 'Credit / Debit Card', icon: 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=60&q=80&auto=format&fit=crop', desc: 'Pay securely online with your card.' },
 ]
 
 const total = computed(() => {
@@ -207,7 +209,13 @@ onMounted(() => cart.fetchCart())
   content: ''; position: absolute; inset: 3px;
   border-radius: 50%; background: var(--primary);
 }
-.payment-option__icon { font-size: 1.5rem; }
+.payment-option__icon {
+  width: 44px; height: 44px; border-radius: .5rem; overflow: hidden;
+  flex-shrink: 0;
+}
+.payment-option__icon-img {
+  width: 100%; height: 100%; object-fit: cover;
+}
 .payment-option__info { flex: 1; }
 .payment-option__info strong { font-size: .9rem; display: block; }
 .payment-option__info p { font-size: .8rem; color: var(--gray-500); margin-top: .1rem; }

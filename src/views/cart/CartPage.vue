@@ -18,13 +18,13 @@
 
         <div v-else-if="!cart.items.length" class="empty-state">
           <div class="empty-icon-wrap">
-            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+            <img src="https://images.unsplash.com/photo-1461896836934-bd45ba8fcf9b?w=100&q=80&auto=format&fit=crop" alt="Empty cart" class="empty-icon-img" />
           </div>
           <h2>Your cart is empty</h2>
-          <p>Add some products to get started with your shopping.</p>
+          <p>Gear up! Add some sports products to get started.</p>
           <RouterLink to="/products" class="btn btn-primary" style="margin-top:1.25rem">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
-            Browse Products
+            Start Shopping
           </RouterLink>
         </div>
 
@@ -240,9 +240,14 @@ onMounted(() => cart.fetchCart())
 .cart-item-leave-active { animation: fadeInUp .2s var(--ease) reverse; }
 
 .empty-icon-wrap {
-  width: 80px; height: 80px; border-radius: 50%;
-  background: var(--gray-100); display: grid; place-items: center;
+  width: 96px; height: 96px; border-radius: 50%; overflow: hidden;
+  background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+  display: grid; place-items: center;
   margin: 0 auto 1rem; color: var(--gray-300);
+  box-shadow: 0 4px 12px rgba(34,197,94,.15);
+}
+.empty-icon-img {
+  width: 100%; height: 100%; object-fit: cover;
 }
 
 @media (max-width: 768px) {

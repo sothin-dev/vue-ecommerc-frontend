@@ -5,23 +5,25 @@
       <div class="auth-left">
         <div class="auth-left__content">
           <RouterLink to="/" class="auth-logo">
-            <span class="auth-logo__icon">◆</span>
-            ShopVue
+            <span class="auth-logo__icon">
+              <svg viewBox="0 0 24 24" fill="currentColor" stroke="none" width="18" height="18"><path d="M13 2L4 14h7l-1 8 9-12h-7l1-8z"/></svg>
+            </span>
+            SportFlex
           </RouterLink>
-          <h1 class="auth-left__title">Welcome back</h1>
-          <p class="auth-left__desc">Sign in to continue shopping and track your orders.</p>
+          <h1 class="auth-left__title">Welcome back, athlete</h1>
+          <p class="auth-left__desc">Sign in to track your orders, manage your gear, and stay in the game.</p>
           <div class="auth-left__features">
             <div class="auth-feature">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-              <span>Track your orders in real-time</span>
+              <span>Track orders on the go</span>
             </div>
             <div class="auth-feature">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-              <span>Save items to your wishlist</span>
+              <span>Save your favorite gear</span>
             </div>
             <div class="auth-feature">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-              <span>Fast & secure checkout</span>
+              <span>Lightning-fast checkout</span>
             </div>
           </div>
         </div>
@@ -31,7 +33,7 @@
       <div class="auth-right">
         <div class="auth-card animate-fade-in">
           <h1 class="auth-title">Sign In</h1>
-          <p class="auth-sub">Enter your credentials to access your account</p>
+          <p class="auth-sub">Enter your credentials to access your SportFlex account</p>
 
           <div v-if="error" class="alert alert-error" style="margin-bottom:1.25rem">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
@@ -106,17 +108,17 @@ async function handleLogin() {
 
 .auth-left {
   flex: 0 0 45%; display: flex; align-items: center; justify-content: center;
-  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  background: linear-gradient(135deg, #052e16 0%, #14532d 100%);
   color: #fff; padding: 3rem; position: relative; overflow: hidden;
 }
 .auth-left::before {
   content: ''; position: absolute; width: 400px; height: 400px;
-  border-radius: 50%; background: rgba(99,102,241,.15);
+  border-radius: 50%;  background: rgba(34,197,94,.15);
   top: -100px; right: -100px; filter: blur(60px);
 }
 .auth-left::after {
   content: ''; position: absolute; width: 300px; height: 300px;
-  border-radius: 50%; background: rgba(168,85,247,.1);
+  border-radius: 50%; background: rgba(249,115,22,.1);
   bottom: -80px; left: -80px; filter: blur(60px);
 }
 .auth-left__content { position: relative; z-index: 1; max-width: 400px; }
@@ -127,8 +129,9 @@ async function handleLogin() {
 .auth-logo__icon {
   display: inline-flex; align-items: center; justify-content: center;
   width: 34px; height: 34px; border-radius: 10px;
-  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  background: linear-gradient(135deg, #16a34a, #15803d);
   color: #fff; font-size: .9rem;
+  box-shadow: 0 2px 8px rgba(34,197,94,.3);
 }
 .auth-left__title { font-size: 2.5rem; font-weight: 800; line-height: 1.15; margin-bottom: 1rem; letter-spacing: -.02em; }
 .auth-left__desc { color: #94a3b8; font-size: 1rem; line-height: 1.6; margin-bottom: 2rem; }
@@ -137,7 +140,7 @@ async function handleLogin() {
   display: flex; align-items: center; gap: .75rem;
   font-size: .9rem; color: #cbd5e1;
 }
-.auth-feature svg { color: var(--success); flex-shrink: 0; }
+.auth-feature svg { color: #22c55e; flex-shrink: 0; }
 
 .auth-right {
   flex: 1; display: flex; align-items: center; justify-content: center;

@@ -4,10 +4,12 @@
       <div class="footer__top">
         <div class="footer__brand-col">
           <RouterLink to="/" class="footer__logo">
-            <span class="footer__logo-icon">◆</span>
-            ShopVue
+            <span class="footer__logo-icon">
+              <svg viewBox="0 0 24 24" fill="currentColor" stroke="none" width="16" height="16"><path d="M13 2L4 14h7l-1 8 9-12h-7l1-8z"/></svg>
+            </span>
+            SportFlex
           </RouterLink>
-          <p class="footer__desc">Your one-stop online shop for quality products at great prices. Fast shipping, easy returns.</p>
+          <p class="footer__desc">Premium sports gear and activewear for champions. Unleash your potential with performance-driven equipment and apparel.</p>
           <div class="footer__socials">
             <a href="#" class="footer__social" aria-label="Twitter">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 3a10.9 10.9 0 01-3.14 1.53 4.48 4.48 0 00-7.86 3v1A10.66 10.66 0 013 4s-4 9 5 13a11.64 11.64 0 01-7 2c9 5 20 0 20-11.5a4.5 4.5 0 00-.08-.83A7.72 7.72 0 0023 3z"/></svg>
@@ -61,7 +63,7 @@
 .footer::before {
   content: ''; position: absolute; top: 0; left: 0; right: 0;
   height: 3px;
-  background: linear-gradient(90deg, var(--primary), #a855f7, var(--secondary), var(--primary));
+  background: linear-gradient(90deg, #22c55e, #16a34a, #f97316, #22c55e);
   background-size: 200% 100%;
   animation: shimmer 3s linear infinite;
 }
@@ -76,8 +78,9 @@
 .footer__logo-icon {
   display: inline-flex; align-items: center; justify-content: center;
   width: 30px; height: 30px; border-radius: 8px;
-  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  background: linear-gradient(135deg, #16a34a, #15803d);
   color: #fff; font-size: .8rem;
+  box-shadow: 0 2px 8px rgba(34,197,94,.3);
 }
 .footer__desc {
   font-size: .875rem; line-height: 1.7; color: #64748b; margin-bottom: 1.25rem;

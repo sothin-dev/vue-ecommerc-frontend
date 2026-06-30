@@ -3,8 +3,10 @@
     <div class="container navbar__inner">
       <!-- Logo -->
       <RouterLink to="/" class="navbar__logo">
-        <span class="logo-icon">◆</span>
-        <span class="logo-text">ShopVue</span>
+        <span class="logo-icon">
+          <svg viewBox="0 0 24 24" fill="currentColor" stroke="none" width="18" height="18"><path d="M13 2L4 14h7l-1 8 9-12h-7l1-8z"/></svg>
+        </span>
+        <span class="logo-text">SportFlex</span>
       </RouterLink>
 
       <!-- Search bar -->
@@ -138,7 +140,7 @@ onMounted(async () => {
   window.addEventListener('scroll', handleScroll, { passive: true })
   try {
     const { data } = await api.get('/categories')
-    categories.value = data.data.slice(0, 8)
+    categories.value = data.data.filter(c => !c.parent_id).slice(0, 8)
   } catch (_) {}
 })
 
@@ -176,8 +178,9 @@ onBeforeUnmount(() => {
 .logo-icon {
   display: inline-flex; align-items: center; justify-content: center;
   width: 32px; height: 32px; border-radius: 10px;
-  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  background: linear-gradient(135deg, #16a34a, #15803d);
   color: #fff; font-size: .9rem;
+  box-shadow: 0 2px 8px rgba(34,197,94,.3);
 }
 .logo-text { letter-spacing: -.03em; }
 

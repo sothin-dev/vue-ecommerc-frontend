@@ -36,7 +36,33 @@
             <span class="filter-radio"></span>
             All Categories
           </label>
-          <label v-for="cat in categories" :key="cat.id" class="filter-item" :class="{ active: filters.category === cat.slug }">
+          <template v-for="group in groupedCategories" :key="group.parentId">
+            <!-- Parent category -->
+            <label class="filter-item" :class="{ active: filters.category === group.parent.slug }" :style="{ fontWeight: 700 }">
+              <input type="radio" v-model="filters.category" :value="group.parent.slug" @change="applyFilters" />
+              <span class="filter-radio"></span>
+              {{ group.parent.name }}
+              <span class="filter-count">{{ group.parent.products_count }}</span>
+            </label>
+            <!-- Child categories -->
+            <label
+              v-for="child in group.children" :key="child.id"
+              class="filter-item"
+              :class="{ active: filters.category === child.slug }"
+              :style="{ paddingLeft: '1.7rem' }"
+            >
+              <input type="radio" v-model="filters.category" :value="child.slug" @change="applyFilters" />
+              <span class="filter-radio" :style="{ width: '12px', height: '12px' }"></span>
+              <span style="font-size:.8rem">{{ child.name }}</span>
+              <span class="filter-count">{{ child.products_count }}</span>
+            </label>
+          </template>
+          <!-- Unparented categories (no parent_id) -->
+          <label
+            v-for="cat in topLevelCategories" :key="cat.id"
+            class="filter-item"
+            :class="{ active: filters.category === cat.slug }"
+          >
             <input type="radio" v-model="filters.category" :value="cat.slug" @change="applyFilters" />
             <span class="filter-radio"></span>
             {{ cat.name }}
@@ -93,9 +119,9 @@
         <!-- Empty -->
         <div v-else-if="!products.length" class="empty-state">
           <div class="empty-icon">
-            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <img src="https://images.unsplash.com/photo-1517649763962-0c623066013b?w=100&q=80&auto=format&fit=crop" alt="No products" class="empty-icon-img" />
           </div>
-          <h2>No products found</h2>
+          <h2>No gear found</h2>
           <p>Try adjusting your filters or search terms.</p>
           <button class="btn btn-primary" style="margin-top:1.25rem" @click="clearFilters">Clear Filters</button>
         </div>
@@ -159,6 +185,35 @@ const pagesRange = computed(() => {
   const range = []
   for (let p = Math.max(1, cur - 2); p <= Math.min(last, cur + 2); p++) range.push(p)
   return range
+})
+
+// Group categories by parent for hierarchical display
+const groupedCategories = computed(() => {
+  const map = new Map()
+  // Collect all parents (categories that are referenced as parent_id)
+  const parentIds = new Set(categories.value.filter(c => c.parent_id).map(c => c.parent_id))
+
+  categories.value.forEach(cat => {
+    if (cat.parent_id) {
+      // This is a child - add to its parent's group
+      if (!map.has(cat.parent_id)) {
+        const parent = categories.value.find(c => c.id === cat.parent_id)
+        if (parent) {
+          map.set(cat.parent_id, { parentId: cat.parent_id, parent, children: [] })
+        }
+      }
+      const group = map.get(cat.parent_id)
+      if (group) group.children.push(cat)
+    }
+  })
+
+  return Array.from(map.values())
+})
+
+// Categories that have no parent_id and are not themselves parents (single top-level)
+const topLevelCategories = computed(() => {
+  const parentIds = new Set(categories.value.filter(c => c.parent_id).map(c => c.parent_id))
+  return categories.value.filter(cat => !cat.parent_id && !parentIds.has(cat.id))
 })
 
 async function fetchProducts() {
@@ -336,9 +391,14 @@ onMounted(async () => {
 
 /* Empty */
 .empty-icon {
-  width: 80px; height: 80px; border-radius: 50%;
-  background: var(--gray-100); display: grid; place-items: center;
+  width: 96px; height: 96px; border-radius: 50%; overflow: hidden;
+  background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+  display: grid; place-items: center;
   margin: 0 auto 1rem; color: var(--gray-300);
+  box-shadow: 0 4px 12px rgba(34,197,94,.15);
+}
+.empty-icon-img {
+  width: 100%; height: 100%; object-fit: cover;
 }
 
 @media (max-width: 768px) {
