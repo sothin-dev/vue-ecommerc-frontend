@@ -36,7 +36,7 @@
             </button>
             <div class="product-card__img-wrapper">
               <RouterLink :to="`/products/${item.slug}`">
-                <img :src="item.image_url || '/placeholder.png'" :alt="item.name" class="product-card__img" loading="lazy" />
+                <ProductImage :src="item.image_url" :alt="item.name" imgClass="product-card__img" size="lg" />
               </RouterLink>
             </div>
             <div class="product-card__body">
@@ -70,6 +70,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { useWishlistStore } from '@/stores/wishlist'
 import { useCartStore }     from '@/stores/cart'
+import ProductImage from '@/components/common/ProductImage.vue'
 
 const wishlist = useWishlistStore()
 const cart     = useCartStore()

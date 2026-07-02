@@ -40,7 +40,7 @@
                 Items Ordered
               </h2>
               <div v-for="item in order.items" :key="item.id" class="order-item">
-                <img :src="item.image_url || '/placeholder.png'" :alt="item.name" class="order-item__img" />
+                <ProductImage :src="item.image_url" :alt="item.name" imgClass="order-item__img" size="sm" />
                 <div class="order-item__info">
                   <RouterLink :to="`/products/${item.slug}`" class="order-item__name">
                     {{ item.name }}
@@ -83,7 +83,12 @@
               </div>
             </div>
 
-            <RouterLink to="/orders" class="btn btn-outline btn-full" style="margin-top:1rem">
+            <button class="btn btn-primary btn-full" style="margin-top:1rem" @click="reorder" :disabled="reordering">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+              {{ reordering ? 'Adding…' : 'Reorder This Order' }}
+            </button>
+
+            <RouterLink to="/orders" class="btn btn-outline btn-full" style="margin-top:.75rem">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
               Back to Orders
             </RouterLink>
@@ -96,12 +101,17 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { useRoute }       from 'vue-router'
+import { useRoute, useRouter }       from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
 import api from '@/services/api'
+import ProductImage from '@/components/common/ProductImage.vue'
 
-const route   = useRoute()
-const order   = ref(null)
-const loading = ref(true)
+const route      = useRoute()
+const router     = useRouter()
+const auth       = useAuthStore()
+const order      = ref(null)
+const loading    = ref(true)
+const reordering = ref(false)
 
 const steps = ['pending', 'processing', 'shipped', 'delivered']
 const stepLabels = {
@@ -118,6 +128,19 @@ function isStepDone(step) {
 
 function formatDate(dt) {
   return new Date(dt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+}
+
+async function reorder() {
+  if (!auth.isLoggedIn) { router.push('/login'); return }
+  reordering.value = true
+  try {
+    const { data } = await api.post(`/orders/${order.value.order_number}/reorder`)
+    alert(data.message)
+  } catch (e) {
+    alert(e.response?.data?.message || 'Could not reorder items.')
+  } finally {
+    reordering.value = false
+  }
 }
 
 onMounted(async () => {

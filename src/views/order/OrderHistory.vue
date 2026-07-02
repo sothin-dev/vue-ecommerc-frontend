@@ -48,10 +48,16 @@
                 <strong>${{ order.total.toFixed(2) }}</strong>
               </div>
             </div>
-            <RouterLink :to="`/orders/${order.order_number}`" class="btn btn-outline btn-sm btn-full" style="margin-top:.75rem">
-              View Details
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-            </RouterLink>
+            <div class="order-card__actions">
+              <RouterLink :to="`/orders/${order.order_number}`" class="btn btn-outline btn-sm btn-full">
+                View Details
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+              </RouterLink>
+              <button class="btn btn-primary btn-sm btn-full" @click="reorder(order.order_number)" :disabled="reordering[order.order_number]">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+                {{ reordering[order.order_number] ? 'Adding…' : 'Reorder' }}
+              </button>
+            </div>
           </div>
         </div>
 
@@ -89,10 +95,16 @@
                 <td><span :class="`status status-${order.status}`">{{ order.status }}</span></td>
                 <td><span :class="`status status-${order.payment_status}`">{{ order.payment_status }}</span></td>
                 <td>
-                  <RouterLink :to="`/orders/${order.order_number}`" class="btn btn-outline btn-sm">
-                    View
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-                  </RouterLink>
+                  <div class="table-actions">
+                    <RouterLink :to="`/orders/${order.order_number}`" class="btn btn-outline btn-sm">
+                      View
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                    </RouterLink>
+                    <button class="btn btn-primary btn-sm" @click="reorder(order.order_number)" :disabled="reordering[order.order_number]">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+                      {{ reordering[order.order_number] ? 'Adding…' : 'Reorder' }}
+                    </button>
+                  </div>
                 </td>
               </tr>
             </tbody>
@@ -115,12 +127,17 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
 import api from '@/services/api'
 
-const orders  = ref([])
-const meta    = ref({ current_page: 1, last_page: 1, total: 0 })
-const loading = ref(true)
+const orders    = ref([])
+const meta      = ref({ current_page: 1, last_page: 1, total: 0 })
+const loading   = ref(true)
+const reordering = reactive({})
+const router    = useRouter()
+const auth      = useAuthStore()
 
 const pagesRange = computed(() => {
   const { current_page: cur, last_page: last } = meta.value
@@ -151,6 +168,19 @@ function changePage(p) {
   window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
+async function reorder(orderNumber) {
+  if (!auth.isLoggedIn) { router.push('/login'); return }
+  reordering[orderNumber] = true
+  try {
+    const { data } = await api.post(`/orders/${orderNumber}/reorder`)
+    alert(data.message)
+  } catch (e) {
+    alert(e.response?.data?.message || 'Could not reorder items.')
+  } finally {
+    reordering[orderNumber] = false
+  }
+}
+
 onMounted(() => fetchOrders())
 </script>
 
@@ -167,6 +197,14 @@ onMounted(() => fetchOrders())
   color: var(--gray-600);
 }
 .order-card__row strong { color: var(--gray-900); }
+.order-card__actions {
+  display: flex; gap: .5rem; margin-top: .75rem;
+}
+.order-card__actions .btn { flex: 1; }
+
+.table-actions {
+  display: flex; gap: .35rem;
+}
 
 .orders-table-wrap { overflow-x: auto; }
 .empty-icon-wrap {

@@ -15,7 +15,7 @@
     <!-- Image -->
     <div class="product-card__img-wrapper">
       <RouterLink :to="`/products/${product.slug}`">
-        <img :src="product.image_url || '/placeholder.png'" :alt="product.name" class="product-card__img" loading="lazy" />
+        <ProductImage :src="product.image_url" :alt="product.name" imgClass="product-card__img" size="lg" />
       </RouterLink>
     </div>
 
@@ -52,6 +52,7 @@ import { useRouter }        from 'vue-router'
 import { useAuthStore }     from '@/stores/auth'
 import { useCartStore }     from '@/stores/cart'
 import { useWishlistStore } from '@/stores/wishlist'
+import ProductImage from '@/components/common/ProductImage.vue'
 
 const props  = defineProps({ product: Object })
 const auth   = useAuthStore()

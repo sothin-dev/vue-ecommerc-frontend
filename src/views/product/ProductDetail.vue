@@ -22,7 +22,7 @@
           <!-- Images -->
           <div class="product-detail__gallery animate-fade-in">
             <div class="main-image-wrap">
-              <img :src="activeImage || '/placeholder.png'" :alt="product.name" class="product-detail__main-img" />
+              <ProductImage :src="activeImage" :alt="product.name" imgClass="product-detail__main-img" size="xl" />
               <span v-if="product.on_sale" class="detail-badge-sale">SALE</span>
               <span v-if="!product.in_stock" class="detail-badge-oos">Out of Stock</span>
             </div>
@@ -184,6 +184,7 @@ import { useAuthStore }     from '@/stores/auth'
 import { useCartStore }     from '@/stores/cart'
 import { useWishlistStore } from '@/stores/wishlist'
 import api from '@/services/api'
+import ProductImage from '@/components/common/ProductImage.vue'
 
 const route   = useRoute()
 const router  = useRouter()

@@ -75,7 +75,7 @@
 
           <div class="summary-items">
             <div v-for="item in cart.items" :key="item.id" class="summary-item">
-              <img :src="item.image_url || '/placeholder.png'" :alt="item.name" class="summary-item__img" />
+              <ProductImage :src="item.image_url" :alt="item.name" imgClass="summary-item__img" size="sm" />
               <div class="summary-item__info">
                 <p class="summary-item__name">{{ item.name }}</p>
                 <p class="summary-item__qty">Qty: {{ item.quantity }}</p>
@@ -126,6 +126,7 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter }    from 'vue-router'
 import { useCartStore } from '@/stores/cart'
 import api from '@/services/api'
+import ProductImage from '@/components/common/ProductImage.vue'
 
 const cart    = useCartStore()
 const router  = useRouter()

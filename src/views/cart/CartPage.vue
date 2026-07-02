@@ -38,7 +38,7 @@
           <TransitionGroup name="cart-item" tag="div" class="cart-items__list">
             <div v-for="item in cart.items" :key="item.id" class="cart-item">
               <div class="cart-item__product">
-                <img :src="item.image_url || '/placeholder.png'" :alt="item.name" class="cart-item__img" />
+                <ProductImage :src="item.image_url" :alt="item.name" imgClass="cart-item__img" size="sm" />
                 <div class="cart-item__info">
                   <RouterLink :to="`/products/${item.slug}`" class="cart-item__name">{{ item.name }}</RouterLink>
                   <p class="cart-item__unit-price">${{ item.price.toFixed(2) }} each</p>
@@ -111,6 +111,7 @@
 <script setup>
 import { computed, onMounted } from 'vue'
 import { useCartStore } from '@/stores/cart'
+import ProductImage from '@/components/common/ProductImage.vue'
 
 const cart = useCartStore()
 
