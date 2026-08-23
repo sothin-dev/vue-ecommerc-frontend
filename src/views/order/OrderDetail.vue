@@ -41,12 +41,13 @@
               </h2>
               <div v-for="item in order.items" :key="item.id" class="order-item">
                 <ProductImage :src="item.image_url" :alt="item.name" imgClass="order-item__img" size="sm" />
-                <div class="order-item__info">
-                  <RouterLink :to="`/products/${item.slug}`" class="order-item__name">
-                    {{ item.name }}
-                  </RouterLink>
-                  <p class="order-item__meta">Qty: {{ item.quantity }} × ${{ item.unit_price.toFixed(2) }}</p>
-                </div>
+                  <div class="order-item__info">
+                    <RouterLink :to="`/products/${item.slug}`" class="order-item__name">
+                      {{ item.name }}
+                    </RouterLink>
+                    <p class="order-item__meta">Qty: {{ item.quantity }} × ${{ item.unit_price.toFixed(2) }}</p>
+                    <p v-if="item.variant" class="order-item__meta">{{ item.variant.type }}: {{ item.variant.value }}</p>
+                  </div>
                 <strong class="order-item__total">${{ item.subtotal.toFixed(2) }}</strong>
               </div>
             </div>
@@ -76,6 +77,7 @@
               <div class="info-divider"></div>
               <div class="info-row"><span>Subtotal</span><span>${{ order.subtotal.toFixed(2) }}</span></div>
               <div class="info-row"><span>Shipping</span><span>{{ order.shipping_fee > 0 ? '$' + order.shipping_fee.toFixed(2) : 'FREE' }}</span></div>
+              <div v-if="order.discount > 0" class="info-row info-discount"><span>Discount<span v-if="order.coupon_code"> ({{ order.coupon_code }})</span></span><span>-${{ order.discount.toFixed(2) }}</span></div>
               <div class="info-divider"></div>
               <div class="info-row info-total">
                 <strong>Total</strong>
@@ -86,6 +88,17 @@
             <button class="btn btn-primary btn-full" style="margin-top:1rem" @click="reorder" :disabled="reordering">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
               {{ reordering ? 'Adding…' : 'Reorder This Order' }}
+            </button>
+
+            <button
+              v-if="canCancel"
+              class="btn btn-outline btn-full btn-danger"
+              style="margin-top:.75rem"
+              :disabled="cancelling"
+              @click="cancelOrder"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+              {{ cancelling ? 'Cancelling…' : 'Cancel Order' }}
             </button>
 
             <RouterLink to="/orders" class="btn btn-outline btn-full" style="margin-top:.75rem">
@@ -100,7 +113,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter }       from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import api from '@/services/api'
@@ -112,6 +125,9 @@ const auth       = useAuthStore()
 const order      = ref(null)
 const loading    = ref(true)
 const reordering = ref(false)
+const cancelling = ref(false)
+
+const canCancel = computed(() => ['pending', 'confirmed', 'processing'].includes(order.value?.status))
 
 const steps = ['pending', 'processing', 'shipped', 'delivered']
 const stepLabels = {
@@ -130,16 +146,16 @@ function formatDate(dt) {
   return new Date(dt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
 }
 
-async function reorder() {
-  if (!auth.isLoggedIn) { router.push('/login'); return }
-  reordering.value = true
+async function cancelOrder() {
+  if (!confirm('Are you sure you want to cancel this order?')) return
+  cancelling.value = true
   try {
-    const { data } = await api.post(`/orders/${order.value.order_number}/reorder`)
-    alert(data.message)
+    const { data } = await api.post(`/orders/${order.value.order_number}/cancel`)
+    order.value = data.data
   } catch (e) {
-    alert(e.response?.data?.message || 'Could not reorder items.')
+    alert(e.response?.data?.message || 'Could not cancel the order.')
   } finally {
-    reordering.value = false
+    cancelling.value = false
   }
 }
 

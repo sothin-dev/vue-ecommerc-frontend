@@ -86,10 +86,39 @@
 
           <div class="summary-divider"></div>
 
+          <!-- Coupon -->
+          <div v-if="!appliedCoupon" class="coupon-box">
+            <div class="coupon-input">
+              <input
+                v-model="couponCode"
+                class="form-control"
+                placeholder="Coupon code"
+                @keyup.enter="applyCoupon"
+              />
+              <button class="btn btn-outline btn-sm" :disabled="applyingCoupon" @click="applyCoupon">
+                {{ applyingCoupon ? '…' : 'Apply' }}
+              </button>
+            </div>
+            <p v-if="couponMsg" class="coupon-msg" :class="couponError ? 'coupon-msg--error' : 'coupon-msg--ok'">
+              {{ couponMsg }}
+            </p>
+          </div>
+
+          <div v-else class="coupon-applied">
+            <div>
+              <span class="coupon-applied__code">{{ appliedCoupon.code }}</span>
+              <span class="coupon-applied__label">coupon applied</span>
+            </div>
+            <button class="coupon-applied__remove" @click="removeCoupon" aria-label="Remove coupon">✕</button>
+          </div>
+
           <div class="summary-row"><span>Subtotal</span><strong>${{ cart.subtotal.toFixed(2) }}</strong></div>
           <div class="summary-row">
             <span>Shipping</span>
-            <strong :class="cart.subtotal >= 50 ? 'text-success' : ''">{{ cart.subtotal >= 50 ? 'FREE' : '$5.00' }}</strong>
+            <strong :class="shipping === 0 ? 'text-success' : ''">{{ shipping === 0 ? 'FREE' : '$' + shipping.toFixed(2) }}</strong>
+          </div>
+          <div v-if="appliedCoupon" class="summary-row summary-discount">
+            <span>Discount</span><strong>-${{ appliedCoupon.discount.toFixed(2) }}</strong>
           </div>
           <div class="summary-divider"></div>
           <div class="summary-row summary-total">
@@ -136,7 +165,14 @@ const error   = ref('')
 const form = reactive({
   shipping_address: '',
   payment_method:   'cash_on_delivery',
+  coupon_code:      '',
 })
+
+const couponCode     = ref('')
+const appliedCoupon  = ref(null)
+const applyingCoupon = ref(false)
+const couponMsg      = ref('')
+const couponError    = ref(false)
 
 const paymentMethods = [
   { value: 'cash_on_delivery', label: 'Cash on Delivery', icon: 'https://images.unsplash.com/photo-1589227365533-1cb251a96435?w=60&q=80&auto=format&fit=crop', desc: 'Pay when your order arrives at your doorstep.' },
@@ -144,10 +180,40 @@ const paymentMethods = [
   { value: 'credit_card',      label: 'Credit / Debit Card', icon: 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=60&q=80&auto=format&fit=crop', desc: 'Pay securely online with your card.' },
 ]
 
+const shipping = computed(() => (cart.subtotal >= 50 ? 0 : 5))
+
 const total = computed(() => {
-  const ship = cart.subtotal >= 50 ? 0 : 5
-  return cart.subtotal + ship
+  const discount = appliedCoupon.value?.discount || 0
+  return Math.max(0, cart.subtotal + shipping.value - discount)
 })
+
+async function applyCoupon() {
+  if (!couponCode.value.trim()) return
+  couponMsg.value = ''
+  couponError.value = false
+  applyingCoupon.value = true
+  try {
+    const { data } = await api.post('/coupon/validate', {
+      code:     couponCode.value.trim(),
+      subtotal: cart.subtotal,
+    })
+    appliedCoupon.value = { code: data.code, discount: data.discount }
+    form.coupon_code = data.code
+    couponMsg.value = data.message
+  } catch (e) {
+    couponError.value = true
+    couponMsg.value = e.response?.data?.message || 'Invalid coupon code.'
+  } finally {
+    applyingCoupon.value = false
+  }
+}
+
+function removeCoupon() {
+  appliedCoupon.value = null
+  form.coupon_code = ''
+  couponCode.value = ''
+  couponMsg.value = ''
+}
 
 async function placeOrder() {
   error.value   = ''
@@ -251,6 +317,28 @@ onMounted(() => cart.fetchCart())
 .summary-total { font-size: 1.1rem; }
 .summary-total strong { color: var(--primary); font-size: 1.15rem; }
 .text-success { color: var(--success) !important; }
+
+/* Coupon */
+.coupon-box { margin-bottom: .75rem; }
+.coupon-input { display: flex; gap: .5rem; }
+.coupon-input .form-control { flex: 1; padding: .5rem .65rem; font-size: .85rem; }
+.coupon-msg { font-size: .78rem; margin-top: .4rem; }
+.coupon-msg--error { color: var(--danger, #dc2626); }
+.coupon-msg--ok { color: var(--success, #16a34a); }
+.coupon-applied {
+  display: flex; align-items: center; justify-content: space-between;
+  background: var(--primary-50, #eef2ff); border: 1px solid var(--primary, #6366f1);
+  border-radius: var(--radius); padding: .6rem .8rem; margin-bottom: .75rem;
+}
+.coupon-applied__code { font-weight: 700; font-size: .85rem; color: var(--primary, #4f46e5); }
+.coupon-applied__label { display: block; font-size: .7rem; color: var(--gray-500); }
+.coupon-applied__remove {
+  border: none; background: transparent; color: var(--gray-400);
+  cursor: pointer; font-size: 1rem; line-height: 1; padding: .2rem .4rem; border-radius: .4rem;
+}
+.coupon-applied__remove:hover { background: rgba(0,0,0,.05); color: var(--danger, #dc2626); }
+.summary-discount { color: var(--success, #16a34a); }
+.summary-discount strong { color: var(--success, #16a34a); }
 
 .secure-text {
   display: flex; align-items: center; justify-content: center;

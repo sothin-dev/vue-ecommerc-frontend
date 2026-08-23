@@ -58,17 +58,36 @@
 
             <!-- Price -->
             <div class="product-detail__price">
-              <span class="price-main">${{ formatPrice(product.display_price) }}</span>
+              <span class="price-main">${{ formatPrice(effectivePrice) }}</span>
               <span v-if="product.on_sale" class="price-orig">${{ formatPrice(product.price) }}</span>
               <span v-if="product.on_sale" class="price-discount">
-                -{{ Math.round((1 - product.display_price/product.price)*100) }}%
+                -{{ Math.round((1 - effectivePrice/product.price)*100) }}%
               </span>
             </div>
 
             <!-- Stock -->
-            <div class="product-detail__stock" :class="product.in_stock ? 'in-stock' : 'out-stock'">
+            <div class="product-detail__stock" :class="effectiveStock > 0 ? 'in-stock' : 'out-stock'">
               <span class="stock-dot"></span>
-              {{ product.in_stock ? `In Stock (${product.stock} available)` : 'Out of Stock' }}
+              {{ effectiveStock > 0 ? `In Stock (${effectiveStock} available)` : 'Out of Stock' }}
+            </div>
+
+            <!-- Variants -->
+            <div v-if="groupedVariants.length" class="product-detail__variants">
+              <div v-for="group in groupedVariants" :key="group.type" class="variant-group">
+                <p class="variant-group__label">{{ group.type }}</p>
+                <div class="variant-options">
+                  <button
+                    v-for="v in group.items" :key="v.id"
+                    class="variant-chip"
+                    :class="{ active: selectedVariant?.id === v.id, 'variant-chip--out': v.stock === 0 }"
+                    :disabled="v.stock === 0"
+                    @click="selectVariant(v)"
+                  >
+                    {{ v.value }}
+                    <span v-if="v.price" class="variant-chip__price">+${{ formatPrice(v.price) }}</span>
+                  </button>
+                </div>
+              </div>
             </div>
 
             <!-- Description -->
@@ -81,14 +100,14 @@
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/></svg>
                 </button>
                 <span>{{ qty }}</span>
-                <button @click="qty < product.stock && qty++" :disabled="qty >= product.stock">
+                <button @click="qty < effectiveStock && qty++" :disabled="qty >= effectiveStock">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                 </button>
               </div>
               <button
                 class="btn btn-primary btn-lg"
                 style="flex:1"
-                :disabled="!product.in_stock || adding"
+                :disabled="effectiveStock <= 0 || adding"
                 @click="addToCart"
               >
                 <svg v-if="!adding" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
@@ -133,12 +152,46 @@
 
           <!-- Reviews -->
           <div v-else class="tab-content">
+            <!-- My review (edit / delete) -->
+            <div v-if="auth.isLoggedIn && product.my_review" class="review-form card" style="padding:1.5rem;margin-bottom:1.5rem">
+              <div class="flex-between" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem">
+                <h3 style="font-size:1.05rem;font-weight:700">Your Review</h3>
+                <span class="badge" :class="product.my_review.is_approved ? 'badge--ok' : 'badge--pending'">
+                  {{ product.my_review.is_approved ? 'Approved' : 'Pending approval' }}
+                </span>
+              </div>
+
+              <template v-if="!editingReview">
+                <div class="stars" style="margin-bottom:.5rem">
+                  <svg v-for="s in 5" :key="s" width="16" height="16" viewBox="0 0 24 24" :fill="s <= product.my_review.rating ? 'currentColor' : 'none'" :stroke="s <= product.my_review.rating ? 'currentColor' : '#cbd5e1'" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                </div>
+                <p class="review-text" style="margin-bottom:.75rem">{{ product.my_review.comment }}</p>
+                <div class="flex-gap">
+                  <button class="btn btn-outline btn-sm" @click="startEdit">Edit</button>
+                  <button class="btn btn-outline btn-sm btn-danger" :disabled="deleting" @click="deleteReview">Delete</button>
+                </div>
+              </template>
+
+              <template v-else>
+                <div class="star-picker" style="margin-bottom:.5rem">
+                  <button v-for="s in 5" :key="s" @click="review.rating = s" class="star-btn">
+                    <svg width="22" height="22" viewBox="0 0 24 24" :fill="s <= review.rating ? 'currentColor' : 'none'" :stroke="s <= review.rating ? 'currentColor' : '#cbd5e1'" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                  </button>
+                </div>
+                <textarea v-model="review.comment" class="form-control" rows="3" style="margin-bottom:.5rem"></textarea>
+                <div class="flex-gap">
+                  <button class="btn btn-primary btn-sm" :disabled="!review.rating || submitting" @click="updateReview">Save</button>
+                  <button class="btn btn-outline btn-sm" @click="editingReview = false">Cancel</button>
+                </div>
+              </template>
+            </div>
+
             <!-- Submit review -->
-            <div v-if="auth.isLoggedIn" class="review-form card" style="padding:1.5rem;margin-bottom:1.5rem">
+            <div v-else-if="auth.isLoggedIn && product.purchased" class="review-form card" style="padding:1.5rem;margin-bottom:1.5rem">
               <h3 style="font-size:1.05rem;font-weight:700;margin-bottom:1rem">Write a Review</h3>
               <div class="star-picker">
                 <button v-for="s in 5" :key="s" @click="review.rating = s" class="star-btn">
-                  <svg :width="s <= review.rating ? 24 : 24" :height="s <= review.rating ? 24 : 24" viewBox="0 0 24 24" :fill="s <= review.rating ? 'currentColor' : 'none'" :stroke="s <= review.rating ? 'currentColor' : '#cbd5e1'" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                  <svg width="24" height="24" viewBox="0 0 24 24" :fill="s <= review.rating ? 'currentColor' : 'none'" :stroke="s <= review.rating ? 'currentColor' : '#cbd5e1'" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
                 </button>
               </div>
               <textarea v-model="review.comment" class="form-control" rows="3" placeholder="Share your experience with this product…" style="margin:.75rem 0"></textarea>
@@ -146,6 +199,14 @@
                 {{ submitting ? 'Submitting…' : 'Submit Review' }}
               </button>
               <div v-if="reviewMsg" class="alert alert-success" style="margin-top:.75rem">{{ reviewMsg }}</div>
+            </div>
+
+            <div v-else-if="auth.isLoggedIn" class="alert alert-info" style="margin-bottom:1.5rem">
+              You can only review products you have purchased.
+            </div>
+
+            <div v-else class="alert alert-info" style="margin-bottom:1.5rem">
+              <RouterLink to="/login" class="link">Log in</RouterLink> to write a review.
             </div>
 
             <!-- Review list -->
@@ -203,7 +264,38 @@ const submitting = ref(false)
 const reviewMsg  = ref('')
 const review     = ref({ rating: 0, comment: '' })
 
+const selectedVariant = ref(null)
+const editingReview   = ref(false)
+const deleting        = ref(false)
+
 const wishlisted = computed(() => wish.isWishlisted(product.value?.id))
+
+const groupedVariants = computed(() => {
+  if (!product.value?.variants?.length) return []
+  const map = new Map()
+  for (const v of product.value.variants) {
+    if (!map.has(v.type)) map.set(v.type, { type: v.type, items: [] })
+    map.get(v.type).items.push(v)
+  }
+  return Array.from(map.values())
+})
+
+const effectiveStock = computed(() => {
+  if (!product.value) return 0
+  return selectedVariant.value ? selectedVariant.value.stock : product.value.stock
+})
+
+const effectivePrice = computed(() => {
+  if (!product.value) return 0
+  if (selectedVariant.value && selectedVariant.value.price != null) {
+    return selectedVariant.value.price
+  }
+  return product.value.display_price
+})
+
+function selectVariant(v) {
+  selectedVariant.value = selectedVariant.value?.id === v.id ? null : v
+}
 
 function formatPrice(n) { return Number(n).toFixed(2) }
 
@@ -211,7 +303,7 @@ async function addToCart() {
   if (!auth.isLoggedIn) { router.push('/login'); return }
   adding.value = true
   try {
-    await cart.addToCart(product.value.id, qty.value)
+    await cart.addToCart(product.value.id, qty.value, selectedVariant.value?.id || null)
     addedMsg.value = `${qty.value} item(s) added to your cart!`
     setTimeout(() => addedMsg.value = '', 3000)
   } catch (e) {
@@ -230,13 +322,54 @@ async function submitReview() {
   if (!review.value.rating) return
   submitting.value = true
   try {
-    await api.post(`/products/${product.value.id}/reviews`, review.value)
+    const { data } = await api.post(`/products/${product.value.id}/reviews`, review.value)
     reviewMsg.value = 'Review submitted! It will appear after approval.'
-    review.value    = { rating: 0, comment: '' }
+    product.value.my_review = {
+      id:          data.data.id,
+      rating:      data.data.rating,
+      comment:     data.data.comment,
+      is_approved: false,
+    }
+    review.value = { rating: 0, comment: '' }
   } catch (e) {
     alert(e.response?.data?.message || 'Error')
   } finally {
     submitting.value = false
+  }
+}
+
+function startEdit() {
+  review.value = { rating: product.value.my_review.rating, comment: product.value.my_review.comment || '' }
+  editingReview.value = true
+}
+
+async function updateReview() {
+  if (!review.value.rating) return
+  submitting.value = true
+  try {
+    const { data } = await api.put(`/products/${product.value.id}/reviews/${product.value.my_review.id}`, review.value)
+    product.value.my_review.rating = data.data.rating
+    product.value.my_review.comment = data.data.comment
+    product.value.my_review.is_approved = false
+    editingReview.value = false
+    review.value = { rating: 0, comment: '' }
+  } catch (e) {
+    alert(e.response?.data?.message || 'Error')
+  } finally {
+    submitting.value = false
+  }
+}
+
+async function deleteReview() {
+  if (!confirm('Delete your review?')) return
+  deleting.value = true
+  try {
+    await api.delete(`/products/${product.value.id}/reviews/${product.value.my_review.id}`)
+    product.value.my_review = null
+  } catch (e) {
+    alert(e.response?.data?.message || 'Error')
+  } finally {
+    deleting.value = false
   }
 }
 
@@ -245,6 +378,8 @@ onMounted(async () => {
     const { data } = await api.get(`/products/${route.params.slug}`)
     product.value   = data.data
     activeImage.value = product.value.image_url || product.value.images?.[0]?.url || null
+    selectedVariant.value = null
+    editingReview.value = false
   } catch {
     product.value = null
   } finally {
@@ -387,6 +522,35 @@ onMounted(async () => {
 .empty-icon-img {
   width: 100%; height: 100%; object-fit: cover;
 }
+
+/* Variants */
+.product-detail__variants { margin-bottom: 1.25rem; }
+.variant-group { margin-bottom: .85rem; }
+.variant-group__label {
+  font-size: .8rem; font-weight: 600; color: var(--gray-600);
+  margin-bottom: .45rem; text-transform: capitalize;
+}
+.variant-options { display: flex; flex-wrap: wrap; gap: .5rem; }
+.variant-chip {
+  border: 1.5px solid var(--gray-200); border-radius: var(--radius);
+  padding: .45rem .85rem; font-size: .85rem; font-weight: 600;
+  background: #fff; cursor: pointer; transition: all .2s; color: var(--gray-700);
+  display: inline-flex; align-items: center; gap: .35rem;
+}
+.variant-chip:hover { border-color: var(--gray-300); }
+.variant-chip.active { border-color: var(--primary); background: var(--primary-50, #eef2ff); color: var(--primary); }
+.variant-chip--out { opacity: .45; cursor: not-allowed; text-decoration: line-through; }
+.variant-chip__price { font-size: .72rem; color: var(--gray-400); font-weight: 500; }
+
+/* Badges & flex helpers */
+.badge { font-size: .72rem; font-weight: 700; padding: .25rem .6rem; border-radius: var(--radius-full); }
+.badge--ok { background: #dcfce7; color: #15803d; }
+.badge--pending { background: #fef9c3; color: #a16207; }
+.flex-gap { display: flex; gap: .5rem; }
+.btn-danger { color: var(--danger, #dc2626); border-color: var(--danger, #dc2626); }
+.btn-danger:hover { background: var(--danger, #dc2626); color: #fff; }
+.alert-info { background: var(--gray-50); border: 1px solid var(--gray-200); color: var(--gray-600); padding: .85rem 1rem; border-radius: var(--radius); font-size: .85rem; }
+.link { color: var(--primary); font-weight: 600; }
 
 /* Fade transition */
 .fade-enter-active { animation: fadeInUp .3s var(--ease); }
