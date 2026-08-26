@@ -1,29 +1,29 @@
-<template>
-  <div id="app">
-    <TheNavbar />
-    <main>
-      <RouterView />
-    </main>
-    <TheFooter />
-  </div>
-</template>
-
 <script setup>
-import TheNavbar from '@/components/layout/TheNavbar.vue'
-import TheFooter from '@/components/layout/TheFooter.vue'
-import { useAuthStore }     from '@/stores/auth'
-import { useCartStore }     from '@/stores/cart'
+import { onMounted } from 'vue'
+import { useAuthStore } from '@/stores/auth'
+import { useCartStore } from '@/stores/cart'
 import { useWishlistStore } from '@/stores/wishlist'
-import { onMounted }        from 'vue'
+import ToastContainer from '@/components/common/ToastContainer.vue'
 
-const auth     = useAuthStore()
-const cart     = useCartStore()
+const auth = useAuthStore()
+const cart = useCartStore()
 const wishlist = useWishlistStore()
 
-onMounted(async () => {
+onMounted(() => {
   if (auth.isLoggedIn) {
-    cart.fetchCart()
-    wishlist.fetchWishlist()
+    // Validate the stored token on boot — clears stale/expired sessions
+    auth.fetchProfile().catch(() => {
+      auth.clearAuth()
+      cart.reset()
+      wishlist.reset()
+    })
+    cart.fetchCart().catch(() => {})
+    wishlist.fetchWishlist().catch(() => {})
   }
 })
 </script>
+
+<template>
+  <RouterView />
+  <ToastContainer />
+</template>

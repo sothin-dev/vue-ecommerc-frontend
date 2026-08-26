@@ -1,34 +1,36 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import api from '@/services/api'
 
 export const useWishlistStore = defineStore('wishlist', () => {
-  const items = ref([])
-
-  const ids = computed(() => new Set(items.value.map(i => i.product_id)))
-
-  function isWishlisted(productId) {
-    return ids.value.has(productId)
-  }
+  const items   = ref([])
+  const ids     = ref([])
+  const loading = ref(false)
 
   async function fetchWishlist() {
-    const { data } = await api.get('/wishlist')
-    items.value = data.data
+    loading.value = true
+    try {
+      const { data } = await api.get('/wishlist')
+      items.value = data.data
+      ids.value   = data.data.map(p => p.product_id)
+    } finally {
+      loading.value = false
+    }
   }
 
   async function toggle(productId) {
-    const { data } = await api.post(`/wishlist/${productId}`)
-    if (data.wishlisted) {
-      await fetchWishlist()
-    } else {
-      items.value = items.value.filter(i => i.product_id !== productId)
-    }
-    return data.wishlisted
+    await api.post(`/wishlist/${productId}`)
+    await fetchWishlist()
+  }
+
+  function isInWishlist(productId) {
+    return ids.value.includes(Number(productId))
   }
 
   function reset() {
     items.value = []
+    ids.value   = []
   }
 
-  return { items, ids, isWishlisted, fetchWishlist, toggle, reset }
+  return { items, ids, loading, fetchWishlist, toggle, isInWishlist, reset }
 })

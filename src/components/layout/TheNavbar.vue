@@ -1,355 +1,181 @@
-<template>
-  <header class="navbar" :class="{ scrolled: isScrolled }">
-    <div class="container navbar__inner">
-      <!-- Logo -->
-      <RouterLink to="/" class="navbar__logo">
-        <span class="logo-icon">
-          <svg viewBox="0 0 24 24" fill="currentColor" stroke="none" width="18" height="18"><path d="M13 2L4 14h7l-1 8 9-12h-7l1-8z"/></svg>
-        </span>
-        <span class="logo-text">SportFlex</span>
-      </RouterLink>
-
-      <!-- Search bar -->
-      <form class="navbar__search" @submit.prevent="search">
-        <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-        <input v-model="searchQuery" type="text" placeholder="Search products..." class="navbar__search-input" />
-        <button type="submit" class="navbar__search-btn">Search</button>
-      </form>
-
-      <!-- Mobile hamburger -->
-      <button class="navbar__hamburger" @click="mobileMenuOpen = !mobileMenuOpen" :class="{ active: mobileMenuOpen }">
-        <span></span><span></span><span></span>
-      </button>
-
-      <!-- Right actions -->
-      <nav class="navbar__actions" :class="{ 'navbar__actions--open': mobileMenuOpen }">
-        <RouterLink v-if="auth.isLoggedIn" to="/wishlist" class="navbar__icon-btn" title="Wishlist">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-          <span v-if="wishlist.items.length" class="badge">{{ wishlist.items.length }}</span>
-        </RouterLink>
-
-        <RouterLink to="/cart" class="navbar__icon-btn" title="Cart">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
-          <span v-if="cart.count" class="badge">{{ cart.count }}</span>
-        </RouterLink>
-
-        <div v-if="auth.isLoggedIn" class="navbar__user" @click="toggleMenu" ref="userMenu">
-          <div class="navbar__avatar">{{ auth.user?.name?.charAt(0)?.toUpperCase() }}</div>
-          <span class="navbar__username">{{ auth.user?.name?.split(' ')[0] }}</span>
-          <svg class="chevron" :class="{ open: menuOpen }" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
-          <Transition name="dropdown">
-            <div v-if="menuOpen" class="dropdown">
-              <RouterLink to="/profile" class="dropdown__item" @click="menuOpen=false">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                Profile
-              </RouterLink>
-              <RouterLink to="/orders" class="dropdown__item" @click="menuOpen=false">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
-                My Orders
-              </RouterLink>
-              <RouterLink to="/wishlist" class="dropdown__item" @click="menuOpen=false">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
-                Wishlist
-              </RouterLink>
-              <div class="dropdown__divider"></div>
-              <button class="dropdown__item dropdown__item--danger" @click="handleLogout">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-                Logout
-              </button>
-            </div>
-          </Transition>
-        </div>
-
-        <template v-else>
-          <RouterLink to="/login" class="btn btn-ghost btn-sm nav-login-btn">Log in</RouterLink>
-          <RouterLink to="/register" class="btn btn-primary btn-sm nav-signup-btn">Sign Up</RouterLink>
-        </template>
-      </nav>
-    </div>
-
-    <!-- Category nav -->
-    <div class="navbar__categories" v-if="categories.length">
-      <div class="container navbar__categories-inner">
-        <RouterLink
-          to="/products"
-          class="navbar__cat-link"
-          :class="{ active: !$route.query.category }"
-        >All</RouterLink>
-        <RouterLink
-          v-for="cat in categories" :key="cat.id"
-          :to="`/products?category=${cat.slug}`"
-          class="navbar__cat-link"
-          :class="{ active: $route.query.category === cat.slug }"
-        >{{ cat.name }}</RouterLink>
-      </div>
-    </div>
-  </header>
-</template>
-
 <script setup>
-import { ref, onMounted, onBeforeUnmount } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
-import { useAuthStore }     from '@/stores/auth'
-import { useCartStore }     from '@/stores/cart'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
+import { useCartStore } from '@/stores/cart'
 import { useWishlistStore } from '@/stores/wishlist'
-import api from '@/services/api'
 
-const auth     = useAuthStore()
-const cart     = useCartStore()
-const wishlist = useWishlistStore()
-const router   = useRouter()
-const route    = useRoute()
+const router = useRouter()
+const auth = useAuthStore()
+const cart = useCartStore()
 
-const searchQuery  = ref('')
-const menuOpen     = ref(false)
-const mobileMenuOpen = ref(false)
-const userMenu     = ref(null)
-const categories   = ref([])
-const isScrolled   = ref(false)
+const searchQuery = ref('')
+const mobileOpen = ref(false)
+const userMenuOpen = ref(false)
+const userMenuRef = ref(null)
+const categories = ref([])
+let clickHandler = null
 
-function search() {
+const initials = computed(() => {
+  return (auth.user?.name || '?')
+    .split(' ')
+    .map(w => w[0])
+    .slice(0, 2)
+    .join('')
+    .toUpperCase()
+})
+
+async function onSearch() {
   if (!searchQuery.value.trim()) return
-  router.push({ name: 'Products', query: { search: searchQuery.value } })
+  router.push({ name: 'Search', query: { search: searchQuery.value.trim() } })
   searchQuery.value = ''
-  mobileMenuOpen.value = false
+  mobileOpen.value = false
 }
 
-function toggleMenu() { menuOpen.value = !menuOpen.value }
-
-function handleClickOutside(e) {
-  if (userMenu.value && !userMenu.value.contains(e.target)) {
-    menuOpen.value = false
-  }
-}
-
-function handleScroll() {
-  isScrolled.value = window.scrollY > 10
-}
-
-async function handleLogout() {
+async function logout() {
+  userMenuOpen.value = false
   await auth.logout()
   cart.reset()
-  wishlist.reset()
-  menuOpen.value = false
-  mobileMenuOpen.value = false
   router.push('/')
 }
 
 onMounted(async () => {
-  document.addEventListener('click', handleClickOutside)
-  window.addEventListener('scroll', handleScroll, { passive: true })
+  clickHandler = e => {
+    if (userMenuRef.value && !userMenuRef.value.contains(e.target)) {
+      userMenuOpen.value = false
+    }
+  }
+  document.addEventListener('click', clickHandler)
+
   try {
-    const { data } = await api.get('/categories')
-    categories.value = data.data.filter(c => !c.parent_id).slice(0, 8)
+    const { default: api } = await import('@/services/api')
+    const { data } = await api.get('/categories', { params: { all: 1 } })
+    categories.value = data.data.filter(c => c.is_active && !c.parent_id).slice(0, 5)
   } catch (_) {}
 })
 
-onBeforeUnmount(() => {
-  document.removeEventListener('click', handleClickOutside)
-  window.removeEventListener('scroll', handleScroll)
-})
+onBeforeUnmount(() => document.removeEventListener('click', clickHandler))
 </script>
 
-<style scoped>
-.navbar {
-  position: sticky; top: 0; z-index: 100;
-  background: rgba(255,255,255,.85);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border-bottom: 1px solid rgba(0,0,0,.06);
-  transition: all .3s cubic-bezier(.4,0,.2,1);
-}
-.navbar.scrolled {
-  box-shadow: 0 4px 20px rgba(0,0,0,.08);
-}
-.navbar__inner {
-  display: flex; align-items: center; gap: 1.25rem;
-  height: 68px;
-}
+<template>
+  <header class="sticky top-0 z-40 border-b border-gray-100 bg-white/90 backdrop-blur">
+    <!-- Announcement bar -->
+    <div class="bg-gray-900 py-2 text-center text-xs font-medium text-white">
+      Free shipping on orders over $50 · 30-day returns
+    </div>
 
-/* Logo */
-.navbar__logo {
-  display: flex; align-items: center; gap: .45rem;
-  font-size: 1.2rem; font-weight: 800; white-space: nowrap;
-  color: var(--gray-900);
-  transition: opacity .2s;
-}
-.navbar__logo:hover { opacity: .8; }
-.logo-icon {
-  display: inline-flex; align-items: center; justify-content: center;
-  width: 32px; height: 32px; border-radius: 10px;
-  background: linear-gradient(135deg, #16a34a, #15803d);
-  color: #fff; font-size: .9rem;
-  box-shadow: 0 2px 8px rgba(34,197,94,.3);
-}
-.logo-text { letter-spacing: -.03em; }
+    <nav class="mx-auto flex h-16 max-w-7xl items-center gap-4 px-4 sm:px-6 lg:px-8">
+      <!-- Mobile menu toggle -->
+      <button class="rounded-lg p-2 text-gray-600 hover:bg-gray-100 lg:hidden" aria-label="Menu" @click="mobileOpen = !mobileOpen">
+        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path v-if="!mobileOpen" stroke-linecap="round" d="M4 6h16M4 12h16M4 18h16" />
+          <path v-else stroke-linecap="round" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
 
-/* Search */
-.navbar__search {
-  flex: 1; max-width: 520px; display: flex; align-items: center;
-  background: var(--gray-100); border: 1.5px solid transparent;
-  border-radius: var(--radius-full); overflow: hidden;
-  transition: all .25s cubic-bezier(.4,0,.2,1);
-}
-.navbar__search:focus-within {
-  background: #fff; border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(99,102,241,.12);
-}
-.search-icon {
-  margin-left: 1rem; color: var(--gray-400); flex-shrink: 0;
-  transition: color .2s;
-}
-.navbar__search:focus-within .search-icon { color: var(--primary); }
-.navbar__search-input {
-  flex: 1; border: none; outline: none; padding: .6rem .75rem;
-  font-size: .875rem; background: transparent; color: var(--gray-800);
-}
-.navbar__search-input::placeholder { color: var(--gray-400); }
-.navbar__search-btn {
-  background: var(--primary); border: none; padding: .55rem 1.25rem;
-  color: #fff; font-size: .8125rem; font-weight: 600;
-  transition: background .2s; border-radius: 0 var(--radius-full) var(--radius-full) 0;
-}
-.navbar__search-btn:hover { background: var(--primary-dark); }
+      <!-- Logo -->
+      <RouterLink to="/" class="flex shrink-0 items-center gap-2">
+        <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-primary-600 text-base font-bold text-white">N</span>
+        <span class="text-lg font-bold tracking-tight text-gray-900">NovaShop</span>
+      </RouterLink>
 
-/* Hamburger */
-.navbar__hamburger {
-  display: none; background: none; border: none;
-  width: 36px; height: 36px; position: relative;
-  z-index: 110;
-}
-.navbar__hamburger span {
-  display: block; width: 20px; height: 2px;
-  background: var(--gray-700); border-radius: 2px;
-  position: absolute; left: 8px;
-  transition: all .3s cubic-bezier(.4,0,.2,1);
-}
-.navbar__hamburger span:nth-child(1) { top: 11px; }
-.navbar__hamburger span:nth-child(2) { top: 17px; }
-.navbar__hamburger span:nth-child(3) { top: 23px; }
-.navbar__hamburger.active span:nth-child(1) { top: 17px; transform: rotate(45deg); }
-.navbar__hamburger.active span:nth-child(2) { opacity: 0; transform: scaleX(0); }
-.navbar__hamburger.active span:nth-child(3) { top: 17px; transform: rotate(-45deg); }
+      <!-- Desktop nav -->
+      <div class="hidden items-center gap-1 lg:flex">
+        <RouterLink to="/" class="rounded-lg px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900">Home</RouterLink>
+        <RouterLink to="/products" class="rounded-lg px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900">Shop</RouterLink>
+        <RouterLink to="/categories" class="rounded-lg px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900">Categories</RouterLink>
+      </div>
 
-/* Actions */
-.navbar__actions {
-  display: flex; align-items: center; gap: .6rem; margin-left: auto;
-}
-.navbar__icon-btn {
-  position: relative; display: flex; align-items: center; justify-content: center;
-  width: 40px; height: 40px; border-radius: var(--radius);
-  color: var(--gray-600); transition: all .2s;
-}
-.navbar__icon-btn:hover {
-  background: var(--gray-100); color: var(--gray-900);
-}
+      <!-- Search -->
+      <form class="ml-auto hidden max-w-md flex-1 md:block" @submit.prevent="onSearch">
+        <div class="relative">
+          <svg class="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" d="M21 21l-4.35-4.35M17 10a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          <input
+            v-model="searchQuery"
+            type="search"
+            placeholder="Search products…"
+            class="w-full rounded-full border border-gray-200 bg-gray-50 py-2 pl-10 pr-4 text-sm focus:border-primary-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-100"
+          />
+        </div>
+      </form>
 
-/* User */
-.navbar__user {
-  display: flex; align-items: center; gap: .5rem;
-  cursor: pointer; position: relative; user-select: none;
-  padding: .3rem .6rem .3rem .35rem; border-radius: var(--radius);
-  transition: background .2s;
-}
-.navbar__user:hover { background: var(--gray-100); }
-.navbar__avatar {
-  width: 34px; height: 34px; border-radius: 50%;
-  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-  color: #fff; display: grid; place-items: center;
-  font-weight: 700; font-size: .8rem;
-}
-.navbar__username {
-  font-size: .85rem; font-weight: 600; color: var(--gray-700);
-}
-.chevron { transition: transform .2s; color: var(--gray-400); }
-.chevron.open { transform: rotate(180deg); }
+      <div class="ml-auto flex items-center gap-1 md:ml-0">
+        <!-- Wishlist -->
+        <RouterLink
+          v-if="auth.isLoggedIn"
+          to="/wishlist"
+          class="relative rounded-lg p-2 text-gray-600 hover:bg-gray-100"
+          aria-label="Wishlist"
+        >
+          <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+          </svg>
+        </RouterLink>
 
-/* Dropdown */
-.dropdown {
-  position: absolute; top: calc(100% + 8px); right: 0;
-  background: #fff; border-radius: var(--radius-lg);
-  box-shadow: 0 12px 40px rgba(0,0,0,.12), 0 0 0 1px rgba(0,0,0,.04);
-  min-width: 200px; padding: .5rem; z-index: 200;
-}
-.dropdown__item {
-  display: flex; align-items: center; gap: .65rem;
-  padding: .6rem .85rem; font-size: .85rem; font-weight: 500;
-  width: 100%; border: none; background: none; text-align: left;
-  color: var(--gray-600); border-radius: .5rem;
-  transition: all .15s;
-}
-.dropdown__item:hover { background: var(--gray-50); color: var(--gray-900); }
-.dropdown__item--danger { color: var(--danger); }
-.dropdown__item--danger:hover { background: #fef2f2; color: var(--danger); }
-.dropdown__divider { height: 1px; background: var(--gray-100); margin: .35rem .5rem; }
+        <!-- Cart -->
+        <RouterLink to="/cart" class="relative rounded-lg p-2 text-gray-600 hover:bg-gray-100" aria-label="Cart">
+          <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+          </svg>
+          <span
+            v-if="cart.count > 0"
+            class="absolute -right-0.5 -top-0.5 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-primary-600 px-1 text-[11px] font-bold text-white"
+          >
+            {{ cart.count }}
+          </span>
+        </RouterLink>
 
-/* Dropdown transition */
-.dropdown-enter-active { animation: dropdownIn .2s cubic-bezier(.4,0,.2,1); }
-.dropdown-leave-active { animation: dropdownIn .15s cubic-bezier(.4,0,.2,1) reverse; }
-@keyframes dropdownIn {
-  from { opacity: 0; transform: translateY(-8px) scale(.96); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
-}
+        <!-- User menu -->
+        <template v-if="auth.isLoggedIn">
+          <div ref="userMenuRef" class="relative ml-1">
+            <button
+              class="flex h-9 w-9 items-center justify-center rounded-full bg-primary-100 text-sm font-semibold text-primary-700 ring-2 ring-transparent transition hover:ring-primary-300"
+              @click="userMenuOpen = !userMenuOpen"
+            >
+              {{ initials }}
+            </button>
+            <Transition name="scale">
+              <div v-if="userMenuOpen" class="absolute right-0 mt-2 w-52 overflow-hidden rounded-xl border border-gray-100 bg-white py-1 shadow-lg">
+                <div class="border-b border-gray-50 px-4 py-2.5">
+                  <p class="truncate text-sm font-semibold text-gray-900">{{ auth.user?.name }}</p>
+                  <p class="truncate text-xs text-gray-500">{{ auth.user?.email }}</p>
+                </div>
+                <RouterLink to="/profile" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50" @click="userMenuOpen = false">My Profile</RouterLink>
+                <RouterLink to="/orders" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50" @click="userMenuOpen = false">My Orders</RouterLink>
+                <button class="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50" @click="logout">Log out</button>
+              </div>
+            </Transition>
+          </div>
+        </template>
+        <template v-else>
+          <RouterLink to="/login" class="hidden rounded-lg px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 sm:block">Sign in</RouterLink>
+          <RouterLink to="/register" class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700">Sign up</RouterLink>
+        </template>
+      </div>
+    </nav>
 
-/* Nav buttons in actions */
-.nav-login-btn { color: var(--gray-600); }
-.nav-login-btn:hover { color: var(--gray-900); background: var(--gray-100); }
-.nav-signup-btn { border-radius: var(--radius-full); padding: .45rem 1.25rem; }
-
-/* Categories */
-.navbar__categories {
-  background: var(--gray-50);
-  border-top: 1px solid var(--gray-100);
-  overflow-x: auto; white-space: nowrap;
-  -webkit-overflow-scrolling: touch;
-}
-.navbar__categories::-webkit-scrollbar { display: none; }
-.navbar__categories-inner { display: flex; gap: 0; }
-.navbar__cat-link {
-  padding: .6rem 1.15rem; font-size: .8125rem; font-weight: 500;
-  color: var(--gray-500);
-  border-bottom: 2px solid transparent;
-  transition: all .2s;
-}
-.navbar__cat-link:hover { color: var(--gray-800); }
-.navbar__cat-link.active,
-.navbar__cat-link.router-link-exact-active {
-  color: var(--primary);
-  border-bottom-color: var(--primary);
-  font-weight: 600;
-}
-
-/* Mobile */
-@media (max-width: 768px) {
-  .navbar__hamburger { display: block; }
-  .navbar__search { display: none; }
-
-  .navbar__actions {
-    position: fixed; top: 0; right: -100%; width: 85%; max-width: 340px;
-    height: 100vh; background: #fff; z-index: 105;
-    flex-direction: column; align-items: stretch;
-    padding: 5rem 1.5rem 2rem; gap: .5rem;
-    box-shadow: -8px 0 40px rgba(0,0,0,.15);
-    transition: right .3s cubic-bezier(.4,0,.2,1);
-    margin-left: 0;
-  }
-  .navbar__actions--open { right: 0; }
-  .navbar__actions--open .navbar__icon-btn,
-  .navbar__actions--open .navbar__user {
-    width: 100%; padding: .85rem 1rem;
-    border-radius: var(--radius); justify-content: flex-start;
-  }
-  .navbar__actions--open .navbar__icon-btn { font-size: 1rem; }
-  .navbar__actions--open .navbar__icon-btn svg { margin-right: .5rem; }
-  .navbar__actions--open .nav-login-btn,
-  .navbar__actions--open .nav-signup-btn {
-    width: 100%; justify-content: center; text-align: center; margin-top: .25rem;
-  }
-  .navbar__actions--open .dropdown {
-    position: static; box-shadow: none; background: var(--gray-50);
-    margin-top: .5rem; border-radius: var(--radius);
-  }
-  .chevron { display: none; }
-  .navbar__categories { display: none; }
-}
-</style>
+    <!-- Mobile panel -->
+    <Transition name="slide-up">
+      <div v-if="mobileOpen" class="border-t border-gray-100 px-4 pb-4 pt-3 lg:hidden">
+        <form class="mb-3 md:hidden" @submit.prevent="onSearch">
+          <input
+            v-model="searchQuery"
+            type="search"
+            placeholder="Search products…"
+            class="w-full rounded-lg border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm focus:border-primary-400 focus:outline-none"
+          />
+        </form>
+        <div class="flex flex-col gap-1">
+          <RouterLink to="/" class="rounded-lg px-3 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50">Home</RouterLink>
+          <RouterLink to="/products" class="rounded-lg px-3 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50">All Products</RouterLink>
+          <RouterLink v-for="c in categories" :key="c.id" :to="{ name: 'CategoryProducts', params: { slug: c.slug } }" class="rounded-lg px-3 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50">
+            {{ c.name }}
+          </RouterLink>
+          <RouterLink to="/categories" class="rounded-lg px-3 py-2.5 text-sm font-medium text-primary-600 hover:bg-primary-50">View all categories →</RouterLink>
+        </div>
+      </div>
+    </Transition>
+  </header>
+</template>

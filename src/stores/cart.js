@@ -23,9 +23,8 @@ export const useCartStore = defineStore('cart', () => {
   async function addToCart(productId, quantity = 1, variantId = null) {
     const payload = { product_id: productId, quantity }
     if (variantId) payload.variant_id = variantId
-    const { data } = await api.post('/cart', payload)
+    await api.post('/cart', payload)
     await fetchCart()
-    return data
   }
 
   async function updateItem(id, quantity) {
@@ -35,8 +34,7 @@ export const useCartStore = defineStore('cart', () => {
 
   async function removeItem(id) {
     await api.delete(`/cart/${id}`)
-    items.value    = items.value.filter(i => i.id !== id)
-    subtotal.value = items.value.reduce((s, i) => s + i.subtotal, 0)
+    await fetchCart()
   }
 
   async function clearCart() {
